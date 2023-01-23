@@ -1,11 +1,14 @@
 
 using EFCoreSample.MySql.Data;
 using EFCoreSample.MySql.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer; //JwtBearerDefaults
+using Microsoft.AspNetCore.Authorization; //Authorize
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace EFCoreSample.MySql.Controllers;
 
+[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 [ApiController]
 [Route("[controller]")]
 public class StudentController : ControllerBase
