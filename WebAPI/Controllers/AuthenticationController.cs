@@ -25,13 +25,15 @@ public class AuthenticationController : ControllerBase
     }
 
     [HttpPost]
+    [Route("Request")]
+    [ProducesResponseType(200)]
     [ProducesResponseType(400)]
     public async Task<IActionResult> Register([FromBody] UserRegistrationRequest userRegistrationRequestDto)
     {
         if (ModelState.IsValid)
         {
-            var userExists = await _userManager.FindByEmailAsync(userRegistrationRequestDto.Mail);
-            if (userExists is not null)
+            var existingUser = await _userManager.FindByEmailAsync(userRegistrationRequestDto.Mail);
+            if (existingUser is not null)
             {
                 return BadRequest(new AuthResults()
                 {
@@ -68,7 +70,59 @@ public class AuthenticationController : ControllerBase
             }
         }
         else
-            return BadRequest();
+        {
+            return BadRequest(new AuthResults()
+            {
+                Result = false,
+                Errors = new List<string>() { "Invalid Payload." }
+            });
+        }
+    }
+
+    [HttpPost]
+    [Route("Login")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(400)]
+    public async Task<IActionResult> Login([FromBody] UserLoginRequest userLoginRequestDto)
+    {
+        if (ModelState.IsValid)
+        {
+            var existingUser = await _userManager.FindByEmailAsync(userLoginRequestDto.Mail);
+            if (existingUser is null)
+            {
+                return BadRequest(new AuthResults()
+                {
+                    Result = false,
+                    Errors = new List<string>() { "Invalid Payload." }
+                });
+            }
+
+            var validLogin = await _userManager.CheckPasswordAsync(existingUser, userLoginRequestDto.Password);
+            if (!validLogin)
+            {
+                return BadRequest(new AuthResults()
+                {
+                    Result = false,
+                    Errors = new List<string>() { "Invalid credentials." }
+                });
+            }
+
+            var token = GenerateJwtToken(existingUser);
+            return Ok(new AuthResults()
+            {
+                Result = true,
+                Token = token
+            });
+
+        }
+        else
+        {
+            return BadRequest(new AuthResults()
+            {
+                Result = false,
+                Errors = new List<string>() { "Invalid Payload." }
+            });
+        }
     }
 
     string GenerateJwtToken(IdentityUser user)

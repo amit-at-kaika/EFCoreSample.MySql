@@ -3,7 +3,7 @@ namespace EFCoreSample.MySql.Models;
 
 public class Student
 {
-    public string? Name { get; set; }
+    public string Name { get; set; } = string.Empty;
     [Key]
     public int RollNo { get; set; }     
     public int Class { get; set; }
