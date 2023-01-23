@@ -1,0 +1,8 @@
+// Called to create 'Students' table
+dotnet ef migrations add "initial_migration"
+
+// Called to create 'Teachers' table
+dotnet ef migrations add "second_migration"
+
+// Called to persist the migrations
+dotnet ef database update
