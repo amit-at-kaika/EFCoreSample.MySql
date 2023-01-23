@@ -2,6 +2,7 @@ using System.Text; //Encoding
 using EFCoreSample.MySql.Config;
 using EFCoreSample.MySql.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer; //JwtBearerDefaults
+using Microsoft.AspNetCore.Identity; //IdentityUser
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens; //TokenValidationParameters
 
@@ -17,13 +18,13 @@ builder.Services.AddDbContext<ApiDbContext>(options =>
 {
     options.UseMySQL(builder.Configuration.GetConnectionString("MySQLConnection")!);
 });
+
 builder.Services.Configure<JwtConfig>(builder.Configuration.GetSection("JwtConfig"));
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-
 })
 .AddJwtBearer(jwt =>
 {
@@ -39,7 +40,8 @@ builder.Services.AddAuthentication(options =>
         ValidateLifetime = true
     };
 });
-
+builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedEmail = false) //TODO: for dev - mail verfication is to be added
+    .AddEntityFrameworkStores<ApiDbContext>(); 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

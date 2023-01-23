@@ -1,7 +1,8 @@
 
 namespace EFCoreSample.MySql.Config;
 
-class JwtConfig
+public class JwtConfig
 {
-    public string? Secret { get; set; }
+    public const string SectionName = "JwtConfig";
+    public string Secret { get; set; } = string.Empty;
 }

@@ -6,3 +6,6 @@ dotnet ef migrations add "second_migration"
 
 // Called to persist the migrations
 dotnet ef database update
+
+// Called to add tables for IdentityDbContext
+dotnet ef migrations add "Adding identity data to API"  
