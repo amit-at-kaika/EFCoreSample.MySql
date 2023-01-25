@@ -8,6 +8,7 @@ using EFCoreSample.MySql.Models.DTOs; //UserRegistrationRequest
 using Microsoft.AspNetCore.Identity; //UserManager
 using Microsoft.AspNetCore.Mvc; //ControllerBase
 using Microsoft.IdentityModel.Tokens; //SecurityTokenDescriptor
+using System.Security.Cryptography; //RNGCryptoServiceProvider
 
 namespace EFCoreSample.MySql.Controllers;
 
@@ -18,7 +19,7 @@ public class AuthenticationController : ControllerBase
     readonly UserManager<IdentityUser> _userManager;
     readonly IConfiguration _configuration;
     readonly ApiDbContext _context;
-    readonly TokenValidationParameters _tokenValidationParameters;    
+    readonly TokenValidationParameters _tokenValidationParameters;
 
     public AuthenticationController(UserManager<IdentityUser> userManager, IConfiguration configuration, ApiDbContext context, TokenValidationParameters tokenValidationParameters)
     {
@@ -56,12 +57,7 @@ public class AuthenticationController : ControllerBase
                 var userIsCreated = await _userManager.CreateAsync(user, userRegistrationRequestDto.Password);
                 if (userIsCreated.Succeeded)
                 {
-                    var token = GenerateJwtToken(user);
-                    return Ok(new AuthResults()
-                    {
-                        Result = true,
-                        Token = token
-                    });
+                    return Ok(GenerateJwtToken(user));
                 }
                 else
                 {
@@ -111,13 +107,7 @@ public class AuthenticationController : ControllerBase
                 });
             }
 
-            var token = GenerateJwtToken(existingUser);
-            return Ok(new AuthResults()
-            {
-                Result = true,
-                Token = token
-            });
-
+            return Ok(GenerateJwtToken(existingUser));
         }
         else
         {
@@ -129,7 +119,7 @@ public class AuthenticationController : ControllerBase
         }
     }
 
-    string GenerateJwtToken(IdentityUser user)
+    async Task<AuthResults> GenerateJwtToken(IdentityUser user)
     {
         var jwtTokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.UTF8.GetBytes(_configuration.GetSection("JwtConfig:Secret").Value!);
@@ -149,6 +139,33 @@ public class AuthenticationController : ControllerBase
 
         var token = jwtTokenHandler.CreateToken(tokenDescriptor);
         var serializedToken = jwtTokenHandler.WriteToken(token);
-        return serializedToken;
+        var refreshToken = new RefreshToken()
+        {
+            JwtId = token.Id,
+            Token = GenerateRandomString(32), //TODO: Generate a refresh token
+            AddedOn = DateTime.UtcNow,
+            ExpiringOn = DateTime.UtcNow.AddMonths(6),
+            IsRevoked = false,
+            IsUsed = false,
+            UserId = user.Id
+        };
+
+        CancellationToken cancellationToken = new CancellationToken();
+        await _context.RefreshTokens.AddAsync(refreshToken, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        var retVal = new AuthResults()
+        {
+            Result = true,
+            Token = serializedToken,
+            RefreshToken = refreshToken.Token
+        };
+
+        return retVal;
+    }
+
+    string GenerateRandomString(int length)
+    {
+        return Convert.ToBase64String(RandomNumberGenerator.GetBytes(length));
     }
 }

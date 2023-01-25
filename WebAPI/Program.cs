@@ -45,6 +45,7 @@ builder.Services.AddAuthentication(options =>
 });
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedEmail = false) //TODO: for dev - mail verfication is to be added
     .AddEntityFrameworkStores<ApiDbContext>();
+builder.Services.AddSingleton(tokenValidationParameters);
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
