@@ -3,8 +3,8 @@ namespace EFCoreSample.MySql.Models;
 
 public class Teacher
 {
-    public string Name { get; set; } = string.Empty;
+    public string? Name { get; set; }
     [Key]
     public int PayrollNo { get; set; }
-    public List<Student> Students { get; set; } = new List<Student>();
+    public List<Student>? Students { get; set; }
 }

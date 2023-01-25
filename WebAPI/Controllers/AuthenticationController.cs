@@ -17,11 +17,15 @@ public class AuthenticationController : ControllerBase
 {
     readonly UserManager<IdentityUser> _userManager;
     readonly IConfiguration _configuration;
+    readonly ApiDbContext _context;
+    readonly TokenValidationParameters _tokenValidationParameters;    
 
-    public AuthenticationController(UserManager<IdentityUser> userManager, IConfiguration configuration)
+    public AuthenticationController(UserManager<IdentityUser> userManager, IConfiguration configuration, ApiDbContext context, TokenValidationParameters tokenValidationParameters)
     {
         _userManager = userManager;
         _configuration = configuration;
+        _context = context;
+        _tokenValidationParameters = tokenValidationParameters;
     }
 
     [HttpPost]
@@ -128,7 +132,7 @@ public class AuthenticationController : ControllerBase
     string GenerateJwtToken(IdentityUser user)
     {
         var jwtTokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.UTF8.GetBytes(_configuration.GetSection("JwtConfig:Secret").Value);
+        var key = Encoding.UTF8.GetBytes(_configuration.GetSection("JwtConfig:Secret").Value!);
         var tokenDescriptor = new SecurityTokenDescriptor()
         {
             Subject = new ClaimsIdentity(new[]
@@ -139,7 +143,7 @@ public class AuthenticationController : ControllerBase
                 new Claim (JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim (JwtRegisteredClaimNames.Iat, DateTime.Now.ToUniversalTime().ToString())
             }),
-            Expires = DateTime.Now.AddHours(1),
+            Expires = DateTime.Now.Add(TimeSpan.Parse(_configuration.GetSection("JwtConfig:ExpiryTime").Value!)),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256)
         };
 
